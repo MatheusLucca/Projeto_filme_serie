@@ -41,6 +41,7 @@ class TitleItem {
   final int? totalEpisodes;
   final int? rating;
   final String? notes;
+  final String? overview;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -55,6 +56,7 @@ class TitleItem {
     this.totalEpisodes,
     this.rating,
     this.notes,
+    this.overview,
     DateTime? createdAt,
     DateTime? updatedAt,
   })  : createdAt = createdAt ?? DateTime.now(),
@@ -71,6 +73,7 @@ class TitleItem {
     int? totalEpisodes,
     int? rating,
     String? notes,
+    String? overview,
     DateTime? updatedAt,
   }) {
     return TitleItem(
@@ -84,6 +87,7 @@ class TitleItem {
       totalEpisodes: totalEpisodes ?? this.totalEpisodes,
       rating: rating ?? this.rating,
       notes: notes ?? this.notes,
+      overview: overview ?? this.overview,
       createdAt: createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
     );
@@ -101,6 +105,7 @@ class TitleItem {
       'total_episodes': totalEpisodes,
       'rating': rating,
       'notes': notes,
+      'overview': overview,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -118,6 +123,7 @@ class TitleItem {
       totalEpisodes: map['total_episodes'] as int?,
       rating: map['rating'] as int?,
       notes: map['notes'] as String?,
+      overview: map['overview'] as String?,
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
     );

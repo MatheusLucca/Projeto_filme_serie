@@ -9,6 +9,9 @@ import 'package:uuid/uuid.dart';
 
 import '../models/title_item.dart';
 import '../providers/titles_provider.dart';
+import '../services/tmdb_service.dart';
+import '../widgets/star_rating.dart';
+import '../widgets/tmdb_search_sheet.dart';
 
 class EditTitleScreen extends StatefulWidget {
   final TitleItem? existing;
@@ -30,6 +33,9 @@ class _EditTitleScreenState extends State<EditTitleScreen> {
   TitleType _type = TitleType.serie;
   WatchStatus _status = WatchStatus.queroVer;
   String? _posterPath;
+  int? _rating;
+  String? _overview;
+  bool _fetchingPoster = false;
 
   bool get _isEditing => widget.existing != null;
 
@@ -46,6 +52,8 @@ class _EditTitleScreenState extends State<EditTitleScreen> {
     _type = item?.type ?? TitleType.serie;
     _status = item?.status ?? WatchStatus.queroVer;
     _posterPath = item?.posterPath;
+    _rating = item?.rating;
+    _overview = item?.overview;
   }
 
   @override
@@ -73,6 +81,32 @@ class _EditTitleScreenState extends State<EditTitleScreen> {
     setState(() => _posterPath = newPath);
   }
 
+  Future<void> _searchTmdb() async {
+    final result = await showModalBottomSheet<TmdbResult>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => const TmdbSearchSheet(),
+    );
+    if (result == null) return;
+
+    setState(() {
+      _nameController.text = result.title;
+      _type = result.type;
+      _overview = result.overview;
+      _fetchingPoster = result.posterPath != null;
+    });
+
+    if (result.posterPath != null) {
+      final localPath = await TmdbService().downloadPoster(result.posterPath!);
+      if (mounted) {
+        setState(() {
+          if (localPath != null) _posterPath = localPath;
+          _fetchingPoster = false;
+        });
+      }
+    }
+  }
+
   void _save() {
     if (!_formKey.currentState!.validate()) return;
     final provider = context.read<TitlesProvider>();
@@ -87,6 +121,8 @@ class _EditTitleScreenState extends State<EditTitleScreen> {
       episode: int.tryParse(_episodeController.text) ?? 1,
       totalEpisodes: totalEpisodesText.isEmpty ? null : int.tryParse(totalEpisodesText),
       notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+      rating: _rating,
+      overview: _overview,
       createdAt: widget.existing?.createdAt,
     );
     if (_isEditing) {
@@ -123,17 +159,27 @@ class _EditTitleScreenState extends State<EditTitleScreen> {
                     color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   ),
                   clipBehavior: Clip.antiAlias,
-                  child: _posterPath != null
-                      ? Image.file(File(_posterPath!), fit: BoxFit.cover)
-                      : const Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.add_photo_alternate_outlined, size: 36),
-                            SizedBox(height: 8),
-                            Text('Adicionar imagem'),
-                          ],
-                        ),
+                  child: _fetchingPoster
+                      ? const Center(child: CircularProgressIndicator())
+                      : _posterPath != null
+                          ? Image.file(File(_posterPath!), fit: BoxFit.cover)
+                          : const Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.add_photo_alternate_outlined, size: 36),
+                                SizedBox(height: 8),
+                                Text('Adicionar imagem'),
+                              ],
+                            ),
                 ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Center(
+              child: OutlinedButton.icon(
+                onPressed: _searchTmdb,
+                icon: const Icon(Icons.search),
+                label: const Text('Buscar no TMDB'),
               ),
             ),
             const SizedBox(height: 20),
@@ -198,11 +244,28 @@ class _EditTitleScreenState extends State<EditTitleScreen> {
               ),
             ],
             const SizedBox(height: 16),
+            Row(
+              children: [
+                const Text('Sua nota:'),
+                const SizedBox(width: 8),
+                StarRating(
+                  rating: _rating,
+                  onChanged: (v) => setState(() => _rating = v),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
             TextFormField(
               controller: _notesController,
               decoration: const InputDecoration(labelText: 'Notas', border: OutlineInputBorder()),
               maxLines: 3,
             ),
+            if (_overview != null && _overview!.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Text('Sinopse (TMDB)', style: Theme.of(context).textTheme.titleSmall),
+              const SizedBox(height: 4),
+              Text(_overview!, style: Theme.of(context).textTheme.bodySmall),
+            ],
             const SizedBox(height: 24),
             if (_isEditing)
               OutlinedButton.icon(

@@ -9,17 +9,23 @@ class TitlesProvider extends ChangeNotifier {
   List<TitleItem> _items = [];
   WatchStatus? _statusFilter;
   TitleType? _typeFilter;
+  String _nameQuery = '';
   bool _loading = false;
 
   List<TitleItem> get items => _items;
   WatchStatus? get statusFilter => _statusFilter;
   TitleType? get typeFilter => _typeFilter;
+  String get nameQuery => _nameQuery;
   bool get loading => _loading;
 
   Future<void> load() async {
     _loading = true;
     notifyListeners();
-    _items = await _dbHelper.fetchAll(status: _statusFilter, type: _typeFilter);
+    _items = await _dbHelper.fetchAll(
+      status: _statusFilter,
+      type: _typeFilter,
+      nameQuery: _nameQuery,
+    );
     _loading = false;
     notifyListeners();
   }
@@ -31,6 +37,11 @@ class TitlesProvider extends ChangeNotifier {
 
   Future<void> setTypeFilter(TitleType? type) async {
     _typeFilter = type;
+    await load();
+  }
+
+  Future<void> setNameQuery(String query) async {
+    _nameQuery = query;
     await load();
   }
 

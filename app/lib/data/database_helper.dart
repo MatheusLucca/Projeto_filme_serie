@@ -19,7 +19,7 @@ class DatabaseHelper {
     final path = join(dbPath, 'watchlist.db');
     return openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE titles (
@@ -33,10 +33,16 @@ class DatabaseHelper {
             total_episodes INTEGER,
             rating INTEGER,
             notes TEXT,
+            overview TEXT,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
           )
         ''');
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          await db.execute('ALTER TABLE titles ADD COLUMN overview TEXT');
+        }
       },
     );
   }
@@ -66,6 +72,7 @@ class DatabaseHelper {
   Future<List<TitleItem>> fetchAll({
     WatchStatus? status,
     TitleType? type,
+    String? nameQuery,
   }) async {
     final db = await database;
     final where = <String>[];
@@ -77,6 +84,10 @@ class DatabaseHelper {
     if (type != null) {
       where.add('type = ?');
       args.add(type.name);
+    }
+    if (nameQuery != null && nameQuery.trim().isNotEmpty) {
+      where.add('name LIKE ?');
+      args.add('%${nameQuery.trim()}%');
     }
     final result = await db.query(
       'titles',

@@ -61,6 +61,19 @@ class TitleCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    if (item.rating != null) ...[
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          for (var i = 1; i <= 5; i++)
+                            Icon(
+                              item.rating! >= i ? Icons.star : Icons.star_border,
+                              size: 14,
+                              color: Colors.amber,
+                            ),
+                        ],
+                      ),
+                    ],
                     const SizedBox(height: 6),
                     Wrap(
                       spacing: 6,
