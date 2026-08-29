@@ -59,15 +59,16 @@ class _AddTitleScreenState extends State<AddTitleScreen> {
     }
   }
 
-  Future<void> _select(TmdbResult result) async {
-    if (result.type == TitleType.serie) {
-      // SelectSeasonScreen pops itself and this screen once the item is added.
-      await Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => SelectSeasonScreen(result: result)),
-      );
-      return;
-    }
+  void _viewDetails(TmdbResult result) {
+    if (result.type != TitleType.serie) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => SelectSeasonScreen(result: result)),
+    );
+  }
 
+  /// Adds the item straight away with sensible defaults: season 1 for series
+  /// (using season 1's episode count when available), no episode data for movies.
+  Future<void> _quickAdd(TmdbResult result) async {
     setState(() => _addingId = result.id);
     try {
       String? posterPath;
@@ -75,11 +76,21 @@ class _AddTitleScreenState extends State<AddTitleScreen> {
         posterPath = await _service.downloadPoster(result.posterPath!);
       }
 
+      int? totalEpisodes;
+      if (result.type == TitleType.serie) {
+        final seasons = await _service.fetchSeasons(result);
+        final season1 = seasons.where((s) => s.seasonNumber == 1).toList();
+        totalEpisodes = season1.isNotEmpty
+            ? season1.first.episodeCount
+            : await _service.fetchTotalEpisodes(result);
+      }
+
       final item = TitleItem(
         name: result.title,
         type: result.type,
         status: WatchStatus.queroVer,
         posterPath: posterPath,
+        totalEpisodes: totalEpisodes,
         overview: result.overview,
       );
 
@@ -90,7 +101,11 @@ class _AddTitleScreenState extends State<AddTitleScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('"${result.title}" adicionado aos não assistidos.')),
       );
-      Navigator.of(context).pop();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Não foi possível adicionar: $e')),
+      );
     } finally {
       if (mounted) setState(() => _addingId = null);
     }
@@ -168,7 +183,8 @@ class _AddTitleScreenState extends State<AddTitleScreen> {
                           ),
                           title: Text(r.title),
                           subtitle: Text(
-                            '${r.type.label}${r.year != null ? ' · ${r.year}' : ''}',
+                            '${r.type.label}${r.year != null ? ' · ${r.year}' : ''}'
+                            '${r.type == TitleType.serie ? ' · toque para ver temporadas' : ''}',
                           ),
                           trailing: isAdding
                               ? const SizedBox(
@@ -176,8 +192,12 @@ class _AddTitleScreenState extends State<AddTitleScreen> {
                                   height: 24,
                                   child: CircularProgressIndicator(strokeWidth: 2),
                                 )
-                              : const Icon(Icons.chevron_right),
-                          onTap: isAdding ? null : () => _select(r),
+                              : IconButton(
+                                  icon: const Icon(Icons.add_circle_outline),
+                                  tooltip: 'Adicionar',
+                                  onPressed: () => _quickAdd(r),
+                                ),
+                          onTap: isAdding ? null : () => _viewDetails(r),
                         );
                       },
                     ),

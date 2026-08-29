@@ -11,6 +11,7 @@ class TitlesProvider extends ChangeNotifier {
   TitleType? _typeFilter;
   String _nameQuery = '';
   bool _loading = false;
+  String? _lastError;
 
   List<TitleItem> get items => _items;
   bool? get watchedFilter => _watchedFilter;
@@ -18,14 +19,27 @@ class TitlesProvider extends ChangeNotifier {
   String get nameQuery => _nameQuery;
   bool get loading => _loading;
 
+  /// Set whenever load()/addItem()/updateItem()/deleteItem() fails, so the
+  /// UI can surface it instead of failing silently. Cleared on next success.
+  String? get lastError => _lastError;
+
+  void clearError() {
+    _lastError = null;
+  }
+
   Future<void> load() async {
     _loading = true;
     notifyListeners();
-    _items = await _dbHelper.fetchAll(
-      watched: _watchedFilter,
-      type: _typeFilter,
-      nameQuery: _nameQuery,
-    );
+    try {
+      _items = await _dbHelper.fetchAll(
+        watched: _watchedFilter,
+        type: _typeFilter,
+        nameQuery: _nameQuery,
+      );
+      _lastError = null;
+    } catch (e) {
+      _lastError = 'Erro ao carregar a lista: $e';
+    }
     _loading = false;
     notifyListeners();
   }
@@ -47,17 +61,35 @@ class TitlesProvider extends ChangeNotifier {
   }
 
   Future<void> addItem(TitleItem item) async {
-    await _dbHelper.insert(item);
+    try {
+      await _dbHelper.insert(item);
+    } catch (e) {
+      _lastError = 'Erro ao adicionar "${item.name}": $e';
+      notifyListeners();
+      rethrow;
+    }
     await load();
   }
 
   Future<void> updateItem(TitleItem item) async {
-    await _dbHelper.update(item.copyWith(updatedAt: DateTime.now()));
+    try {
+      await _dbHelper.update(item.copyWith(updatedAt: DateTime.now()));
+    } catch (e) {
+      _lastError = 'Erro ao salvar "${item.name}": $e';
+      notifyListeners();
+      rethrow;
+    }
     await load();
   }
 
   Future<void> deleteItem(int id) async {
-    await _dbHelper.delete(id);
+    try {
+      await _dbHelper.delete(id);
+    } catch (e) {
+      _lastError = 'Erro ao excluir: $e';
+      notifyListeners();
+      rethrow;
+    }
     await load();
   }
 

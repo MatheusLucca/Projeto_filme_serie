@@ -43,6 +43,17 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     final provider = context.watch<TitlesProvider>();
 
+    if (provider.lastError != null) {
+      final error = provider.lastError!;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        provider.clearError();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error), duration: const Duration(seconds: 6)),
+        );
+      });
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Minha Watchlist'),
@@ -121,32 +132,35 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               : 'Nada por aqui. Toque em + para adicionar.',
                         ),
                       )
-                    : ListView.builder(
-                        itemCount: provider.items.length,
-                        itemBuilder: (context, index) {
-                          final item = provider.items[index];
-                          return TitleCard(
-                            item: item,
-                            onTap: () async {
-                              await Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => EditTitleScreen(existing: item),
-                                ),
-                              );
-                              if (context.mounted) {
-                                await context.read<TitlesProvider>().load();
-                              }
-                            },
-                            onAdvanceEpisode: () => provider.advanceEpisode(item),
-                            onMarkWatched: item.type == TitleType.filme
-                                ? () => provider.markWatched(item)
-                                : null,
-                            onUndoWatched:
-                                item.status == WatchStatus.visto
-                                    ? () => provider.moveBackToWatchlist(item)
-                                    : null,
-                          );
-                        },
+                    : RefreshIndicator(
+                        onRefresh: () => context.read<TitlesProvider>().load(),
+                        child: ListView.builder(
+                          itemCount: provider.items.length,
+                          itemBuilder: (context, index) {
+                            final item = provider.items[index];
+                            return TitleCard(
+                              item: item,
+                              onTap: () async {
+                                await Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => EditTitleScreen(existing: item),
+                                  ),
+                                );
+                                if (context.mounted) {
+                                  await context.read<TitlesProvider>().load();
+                                }
+                              },
+                              onAdvanceEpisode: () => provider.advanceEpisode(item),
+                              onMarkWatched: item.type == TitleType.filme
+                                  ? () => provider.markWatched(item)
+                                  : null,
+                              onUndoWatched:
+                                  item.status == WatchStatus.visto
+                                      ? () => provider.moveBackToWatchlist(item)
+                                      : null,
+                            );
+                          },
+                        ),
                       ),
           ),
         ],
