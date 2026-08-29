@@ -71,6 +71,7 @@ class DatabaseHelper {
 
   Future<List<TitleItem>> fetchAll({
     WatchStatus? status,
+    bool? watched,
     TitleType? type,
     String? nameQuery,
   }) async {
@@ -80,6 +81,10 @@ class DatabaseHelper {
     if (status != null) {
       where.add('status = ?');
       args.add(status.name);
+    }
+    if (watched != null) {
+      where.add(watched ? "status = ?" : "status != ?");
+      args.add(WatchStatus.visto.name);
     }
     if (type != null) {
       where.add('type = ?');

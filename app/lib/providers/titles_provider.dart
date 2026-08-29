@@ -7,13 +7,13 @@ class TitlesProvider extends ChangeNotifier {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
 
   List<TitleItem> _items = [];
-  WatchStatus? _statusFilter;
+  bool? _watchedFilter = false;
   TitleType? _typeFilter;
   String _nameQuery = '';
   bool _loading = false;
 
   List<TitleItem> get items => _items;
-  WatchStatus? get statusFilter => _statusFilter;
+  bool? get watchedFilter => _watchedFilter;
   TitleType? get typeFilter => _typeFilter;
   String get nameQuery => _nameQuery;
   bool get loading => _loading;
@@ -22,7 +22,7 @@ class TitlesProvider extends ChangeNotifier {
     _loading = true;
     notifyListeners();
     _items = await _dbHelper.fetchAll(
-      status: _statusFilter,
+      watched: _watchedFilter,
       type: _typeFilter,
       nameQuery: _nameQuery,
     );
@@ -30,8 +30,9 @@ class TitlesProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setStatusFilter(WatchStatus? status) async {
-    _statusFilter = status;
+  /// false = não assistidos (quero ver + assistindo), true = assistidos, null = todos.
+  Future<void> setWatchedFilter(bool? watched) async {
+    _watchedFilter = watched;
     await load();
   }
 
@@ -75,5 +76,13 @@ class TitlesProvider extends ChangeNotifier {
       season: newSeason,
       status: newStatus,
     ));
+  }
+
+  Future<void> markWatched(TitleItem item) async {
+    await updateItem(item.copyWith(status: WatchStatus.visto));
+  }
+
+  Future<void> moveBackToWatchlist(TitleItem item) async {
+    await updateItem(item.copyWith(status: WatchStatus.queroVer));
   }
 }

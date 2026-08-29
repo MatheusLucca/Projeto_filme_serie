@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/title_item.dart';
 import '../providers/titles_provider.dart';
 import '../widgets/title_card.dart';
+import 'add_title_screen.dart';
 import 'edit_title_screen.dart';
 import 'settings_screen.dart';
 
@@ -14,12 +15,18 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   final _searchController = TextEditingController();
+  late final TabController _tabController;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) return;
+      context.read<TitlesProvider>().setWatchedFilter(_tabController.index == 1);
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<TitlesProvider>().load();
     });
@@ -28,6 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
@@ -46,6 +54,13 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ],
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(text: 'Não assistidos'),
+            Tab(text: 'Assistidos'),
+          ],
+        ),
       ),
       body: Column(
         children: [
@@ -54,7 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Buscar por nome...',
+                hintText: 'Buscar na sua lista...',
                 prefixIcon: const Icon(Icons.search),
                 border: const OutlineInputBorder(),
                 isDense: true,
@@ -77,49 +92,35 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<WatchStatus?>(
-                    initialValue: provider.statusFilter,
-                    decoration: const InputDecoration(
-                      labelText: 'Status',
-                      border: OutlineInputBorder(),
-                      isDense: true,
-                    ),
-                    items: [
-                      const DropdownMenuItem(value: null, child: Text('Todos')),
-                      ...WatchStatus.values
-                          .map((s) => DropdownMenuItem(value: s, child: Text(s.label))),
-                    ],
-                    onChanged: (v) => provider.setStatusFilter(v),
-                  ),
+            child: SizedBox(
+              width: double.infinity,
+              child: DropdownButtonFormField<TitleType?>(
+                initialValue: provider.typeFilter,
+                decoration: const InputDecoration(
+                  labelText: 'Tipo',
+                  border: OutlineInputBorder(),
+                  isDense: true,
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: DropdownButtonFormField<TitleType?>(
-                    initialValue: provider.typeFilter,
-                    decoration: const InputDecoration(
-                      labelText: 'Tipo',
-                      border: OutlineInputBorder(),
-                      isDense: true,
-                    ),
-                    items: [
-                      const DropdownMenuItem(value: null, child: Text('Todos')),
-                      ...TitleType.values
-                          .map((t) => DropdownMenuItem(value: t, child: Text(t.label))),
-                    ],
-                    onChanged: (v) => provider.setTypeFilter(v),
-                  ),
-                ),
-              ],
+                items: [
+                  const DropdownMenuItem(value: null, child: Text('Todos os tipos')),
+                  ...TitleType.values
+                      .map((t) => DropdownMenuItem(value: t, child: Text(t.label))),
+                ],
+                onChanged: (v) => provider.setTypeFilter(v),
+              ),
             ),
           ),
           Expanded(
             child: provider.loading
                 ? const Center(child: CircularProgressIndicator())
                 : provider.items.isEmpty
-                    ? const Center(child: Text('Nada por aqui ainda. Toque em + para adicionar.'))
+                    ? Center(
+                        child: Text(
+                          provider.watchedFilter == true
+                              ? 'Nada assistido ainda.'
+                              : 'Nada por aqui. Toque em + para adicionar.',
+                        ),
+                      )
                     : ListView.builder(
                         itemCount: provider.items.length,
                         itemBuilder: (context, index) {
@@ -134,6 +135,13 @@ class _HomeScreenState extends State<HomeScreen> {
                               );
                             },
                             onAdvanceEpisode: () => provider.advanceEpisode(item),
+                            onMarkWatched: item.type == TitleType.filme
+                                ? () => provider.markWatched(item)
+                                : null,
+                            onUndoWatched:
+                                item.status == WatchStatus.visto
+                                    ? () => provider.moveBackToWatchlist(item)
+                                    : null,
                           );
                         },
                       ),
@@ -143,7 +151,7 @@ class _HomeScreenState extends State<HomeScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           await Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const EditTitleScreen()),
+            MaterialPageRoute(builder: (_) => const AddTitleScreen()),
           );
         },
         child: const Icon(Icons.add),

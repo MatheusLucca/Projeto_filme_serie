@@ -85,6 +85,27 @@ class TmdbService {
     }).toList();
   }
 
+  /// Fetches the total episode count for a TV show. Returns null on failure
+  /// or when the result is a movie (which has no episodes).
+  Future<int?> fetchTotalEpisodes(TmdbResult result) async {
+    if (result.type != TitleType.serie) return null;
+    final apiKey = await _settings.getTmdbApiKey();
+    if (apiKey == null || apiKey.isEmpty) return null;
+
+    try {
+      final uri = Uri.parse('$_baseUrl/tv/${result.id}').replace(queryParameters: {
+        'api_key': apiKey,
+        'language': 'pt-BR',
+      });
+      final response = await http.get(uri);
+      if (response.statusCode != 200) return null;
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      return data['number_of_episodes'] as int?;
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Downloads the poster image to local app storage and returns the file path.
   Future<String?> downloadPoster(String posterPath) async {
     try {
