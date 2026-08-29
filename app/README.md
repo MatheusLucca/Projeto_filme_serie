@@ -25,14 +25,22 @@ Requer um emulador Android/iOS conectado ou dispositivo físico.
 
 ### Busca automática (TMDB)
 
-Para usar o botão "Buscar no TMDB" ao adicionar um título:
+Para usar o botão "Buscar no TMDB" ao adicionar um título, você precisa de uma
+API Key (v3 auth) gratuita: crie uma conta em https://www.themoviedb.org/ e
+gere a chave em Configurações > API da sua conta.
 
-1. Crie uma conta gratuita em https://www.themoviedb.org/
-2. Gere uma API Key (v3 auth) em Configurações > API da sua conta TMDB
-3. No app, abra o ícone de engrenagem na tela inicial e cole a chave
+Duas formas de configurar, sem nunca versionar a chave no git:
 
-Sem a chave configurada, o cadastro continua funcionando normalmente com
-upload manual de pôster.
+1. **Arquivo `.env` (padrão do projeto)** — copie `.env.example` para `.env`
+   na raiz de `app/` e preencha `TMDB_API_KEY=sua_chave_aqui`. O arquivo
+   `.env` está no `.gitignore` e nunca é commitado. O app carrega essa chave
+   automaticamente ao iniciar.
+2. **Tela de Configurações no app** — abra o ícone de engrenagem na tela
+   inicial e cole sua chave lá. Fica salva no armazenamento local do
+   dispositivo (`shared_preferences`) e tem prioridade sobre o `.env`.
+
+Sem nenhuma chave configurada, o cadastro continua funcionando normalmente
+com upload manual de pôster.
 
 ## Estrutura
 

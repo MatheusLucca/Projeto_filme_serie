@@ -13,12 +13,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _settings = SettingsService();
   final _controller = TextEditingController();
   bool _loaded = false;
+  bool _usingEnvDefault = false;
 
   @override
   void initState() {
     super.initState();
-    _settings.getTmdbApiKey().then((key) {
-      _controller.text = key ?? '';
+    _settings.getSavedTmdbApiKey().then((savedKey) async {
+      final effectiveKey = await _settings.getTmdbApiKey();
+      _controller.text = savedKey ?? '';
+      _usingEnvDefault = savedKey == null && effectiveKey != null;
       setState(() => _loaded = true);
     });
   }
@@ -31,6 +34,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _save() async {
     await _settings.setTmdbApiKey(_controller.text);
+    setState(() => _usingEnvDefault = false);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Chave salva.')),
@@ -58,6 +62,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   '(v3 auth) em Configurações > API e cole abaixo.',
                   style: TextStyle(fontSize: 12, color: Colors.grey),
                 ),
+                if (_usingEnvDefault) ...[
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Usando a chave padrão definida no arquivo .env do projeto. '
+                    'Preencha abaixo para sobrescrevê-la.',
+                    style: TextStyle(fontSize: 12, color: Colors.green),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 TextField(
                   controller: _controller,
