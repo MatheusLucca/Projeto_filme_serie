@@ -27,6 +27,18 @@ class TmdbResult {
   });
 }
 
+class TmdbSeason {
+  final int seasonNumber;
+  final String name;
+  final int episodeCount;
+
+  TmdbSeason({
+    required this.seasonNumber,
+    required this.name,
+    required this.episodeCount,
+  });
+}
+
 class TmdbException implements Exception {
   final String message;
   TmdbException(this.message);
@@ -85,8 +97,8 @@ class TmdbService {
     }).toList();
   }
 
-  /// Fetches the total episode count for a TV show. Returns null on failure
-  /// or when the result is a movie (which has no episodes).
+  /// Fetches the total episode count for a TV show (all seasons combined).
+  /// Returns null on failure or when the result is a movie.
   Future<int?> fetchTotalEpisodes(TmdbResult result) async {
     if (result.type != TitleType.serie) return null;
     final apiKey = await _settings.getTmdbApiKey();
@@ -103,6 +115,35 @@ class TmdbService {
       return data['number_of_episodes'] as int?;
     } catch (_) {
       return null;
+    }
+  }
+
+  /// Fetches the list of seasons (with episode counts) for a TV show.
+  /// Excludes "season 0" (specials). Returns an empty list on failure.
+  Future<List<TmdbSeason>> fetchSeasons(TmdbResult result) async {
+    if (result.type != TitleType.serie) return [];
+    final apiKey = await _settings.getTmdbApiKey();
+    if (apiKey == null || apiKey.isEmpty) return [];
+
+    try {
+      final uri = Uri.parse('$_baseUrl/tv/${result.id}').replace(queryParameters: {
+        'api_key': apiKey,
+        'language': 'pt-BR',
+      });
+      final response = await http.get(uri);
+      if (response.statusCode != 200) return [];
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final seasons = (data['seasons'] as List<dynamic>? ?? []);
+      return seasons
+          .map((s) => TmdbSeason(
+                seasonNumber: s['season_number'] as int? ?? 0,
+                name: s['name'] as String? ?? 'Temporada',
+                episodeCount: s['episode_count'] as int? ?? 0,
+              ))
+          .where((s) => s.seasonNumber > 0 && s.episodeCount > 0)
+          .toList();
+    } catch (_) {
+      return [];
     }
   }
 

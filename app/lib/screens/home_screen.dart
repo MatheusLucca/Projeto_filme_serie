@@ -133,6 +133,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                   builder: (_) => EditTitleScreen(existing: item),
                                 ),
                               );
+                              if (context.mounted) {
+                                await context.read<TitlesProvider>().load();
+                              }
                             },
                             onAdvanceEpisode: () => provider.advanceEpisode(item),
                             onMarkWatched: item.type == TitleType.filme
@@ -153,6 +156,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           await Navigator.of(context).push(
             MaterialPageRoute(builder: (_) => const AddTitleScreen()),
           );
+          if (context.mounted) {
+            await context.read<TitlesProvider>().load();
+          }
         },
         child: const Icon(Icons.add),
       ),

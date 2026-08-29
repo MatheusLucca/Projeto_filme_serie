@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -5,6 +7,7 @@ import '../models/title_item.dart';
 import '../providers/titles_provider.dart';
 import '../services/tmdb_service.dart';
 import 'edit_title_screen.dart';
+import 'select_season_screen.dart';
 
 class AddTitleScreen extends StatefulWidget {
   const AddTitleScreen({super.key});
@@ -16,10 +19,24 @@ class AddTitleScreen extends StatefulWidget {
 class _AddTitleScreenState extends State<AddTitleScreen> {
   final _service = TmdbService();
   final _controller = TextEditingController();
+  Timer? _debounce;
   List<TmdbResult> _results = [];
   bool _loading = false;
   String? _error;
   int? _addingId;
+
+  void _onChanged(String query) {
+    _debounce?.cancel();
+    if (query.trim().isEmpty) {
+      setState(() {
+        _results = [];
+        _error = null;
+        _loading = false;
+      });
+      return;
+    }
+    _debounce = Timer(const Duration(milliseconds: 500), () => _search(query));
+  }
 
   Future<void> _search(String query) async {
     if (query.trim().isEmpty) return;
@@ -29,31 +46,40 @@ class _AddTitleScreenState extends State<AddTitleScreen> {
     });
     try {
       final results = await _service.search(query);
+      if (!mounted) return;
       setState(() => _results = results);
     } on TmdbException catch (e) {
+      if (!mounted) return;
       setState(() => _error = e.message);
     } catch (_) {
+      if (!mounted) return;
       setState(() => _error = 'Não foi possível buscar. Verifique sua conexão.');
     } finally {
-      setState(() => _loading = false);
+      if (mounted) setState(() => _loading = false);
     }
   }
 
-  Future<void> _add(TmdbResult result) async {
+  Future<void> _select(TmdbResult result) async {
+    if (result.type == TitleType.serie) {
+      // SelectSeasonScreen pops itself and this screen once the item is added.
+      await Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => SelectSeasonScreen(result: result)),
+      );
+      return;
+    }
+
     setState(() => _addingId = result.id);
     try {
       String? posterPath;
       if (result.posterPath != null) {
         posterPath = await _service.downloadPoster(result.posterPath!);
       }
-      final totalEpisodes = await _service.fetchTotalEpisodes(result);
 
       final item = TitleItem(
         name: result.title,
         type: result.type,
         status: WatchStatus.queroVer,
         posterPath: posterPath,
-        totalEpisodes: totalEpisodes,
         overview: result.overview,
       );
 
@@ -72,6 +98,7 @@ class _AddTitleScreenState extends State<AddTitleScreen> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _controller.dispose();
     super.dispose();
   }
@@ -91,16 +118,25 @@ class _AddTitleScreenState extends State<AddTitleScreen> {
                 hintText: 'Buscar filme, série, anime...',
                 prefixIcon: const Icon(Icons.search),
                 border: const OutlineInputBorder(),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.arrow_forward),
-                  onPressed: () => _search(_controller.text),
-                ),
+                suffixIcon: _controller.text.isEmpty
+                    ? null
+                    : IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _controller.clear();
+                          _onChanged('');
+                          setState(() {});
+                        },
+                      ),
               ),
-              onSubmitted: _search,
+              onChanged: (v) {
+                _onChanged(v);
+                setState(() {});
+              },
             ),
           ),
           if (_loading) const Expanded(child: Center(child: CircularProgressIndicator())),
-          if (_error != null)
+          if (!_loading && _error != null)
             Expanded(
               child: Center(
                 child: Padding(
@@ -112,7 +148,7 @@ class _AddTitleScreenState extends State<AddTitleScreen> {
           if (!_loading && _error == null)
             Expanded(
               child: _results.isEmpty
-                  ? const Center(child: Text('Digite um nome e toque em buscar.'))
+                  ? const Center(child: Text('Digite um nome para buscar.'))
                   : ListView.builder(
                       itemCount: _results.length,
                       itemBuilder: (context, index) {
@@ -140,12 +176,8 @@ class _AddTitleScreenState extends State<AddTitleScreen> {
                                   height: 24,
                                   child: CircularProgressIndicator(strokeWidth: 2),
                                 )
-                              : IconButton(
-                                  icon: const Icon(Icons.check_circle_outline),
-                                  tooltip: 'Adicionar',
-                                  onPressed: () => _add(r),
-                                ),
-                          onTap: isAdding ? null : () => _add(r),
+                              : const Icon(Icons.chevron_right),
+                          onTap: isAdding ? null : () => _select(r),
                         );
                       },
                     ),
