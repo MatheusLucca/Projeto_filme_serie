@@ -163,9 +163,11 @@ class TitleCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       child: InkWell(
         onTap: onTap,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [_poster(context), _info(context)],
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [_poster(context), _info(context)],
+          ),
         ),
       ),
     );
