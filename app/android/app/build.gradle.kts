@@ -29,11 +29,15 @@ android {
         versionName = flutter.versionName
     }
 
+    val releaseKeystoreFile = System.getenv("RELEASE_KEYSTORE_PATH")?.let { file(it) }
+    val hasReleaseKeystore = releaseKeystoreFile != null &&
+        releaseKeystoreFile.exists() &&
+        releaseKeystoreFile.length() > 0
+
     signingConfigs {
-        create("release") {
-            val keystorePath = System.getenv("RELEASE_KEYSTORE_PATH")
-            if (keystorePath != null) {
-                storeFile = file(keystorePath)
+        if (hasReleaseKeystore) {
+            create("release") {
+                storeFile = releaseKeystoreFile
                 storePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD")
                 keyAlias = System.getenv("RELEASE_KEY_ALIAS")
                 keyPassword = System.getenv("RELEASE_KEY_PASSWORD")
@@ -44,11 +48,12 @@ android {
     buildTypes {
         release {
             // Uses a persistent release keystore (RELEASE_KEYSTORE_* env vars,
-            // set in CI) so every build shares the same signature and Android
-            // treats new APKs as updates instead of a signature conflict.
-            // Falls back to the debug key for local `flutter build apk --release`
-            // runs where those env vars aren't set.
-            signingConfig = if (System.getenv("RELEASE_KEYSTORE_PATH") != null) {
+            // set in CI from repository secrets) so every build shares the
+            // same signature and Android treats new APKs as updates instead
+            // of a signature conflict. Falls back to the debug key when no
+            // keystore secret is configured yet, or for local
+            // `flutter build apk --release` runs.
+            signingConfig = if (hasReleaseKeystore) {
                 signingConfigs.getByName("release")
             } else {
                 signingConfigs.getByName("debug")
