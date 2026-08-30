@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
 import '../models/title_item.dart';
@@ -17,6 +18,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   final _searchController = TextEditingController();
   late final TabController _tabController;
+  String _buildInfo = '';
 
   @override
   void initState() {
@@ -28,6 +30,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<TitlesProvider>().load();
+    });
+    PackageInfo.fromPlatform().then((info) {
+      if (!mounted) return;
+      setState(() => _buildInfo = 'v${info.version}+${info.buildNumber}');
     });
   }
 
@@ -77,7 +83,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
             child: Text(
-              'Diagnóstico: ${provider.totalCount} título(s) salvo(s) no total · '
+              'Build $_buildInfo · Diagnóstico: ${provider.totalCount} título(s) salvo(s) no total · '
               '${provider.items.length} nesta aba'
               '${provider.loading ? ' · carregando...' : ''}',
               style: const TextStyle(fontSize: 11, color: Colors.grey),
