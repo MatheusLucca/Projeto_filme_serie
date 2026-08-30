@@ -22,13 +22,28 @@ class TitleCard extends StatelessWidget {
 
   bool get _isEpisodic => item.type != TitleType.filme;
 
+  bool _posterExists(String path) {
+    try {
+      return File(path).existsSync();
+    } catch (_) {
+      return false;
+    }
+  }
+
   Widget _poster(BuildContext context) {
     final poster = item.posterPath;
     return SizedBox(
       width: 90,
       height: 130,
-      child: poster != null && File(poster).existsSync()
-          ? Image.file(File(poster), fit: BoxFit.cover)
+      child: poster != null && _posterExists(poster)
+          ? Image.file(
+              File(poster),
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => Container(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                child: const Icon(Icons.movie_outlined, size: 36),
+              ),
+            )
           : Container(
               color: Theme.of(context).colorScheme.surfaceContainerHighest,
               child: const Icon(Icons.movie_outlined, size: 36),
