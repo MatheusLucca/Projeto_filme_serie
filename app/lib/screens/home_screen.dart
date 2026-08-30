@@ -76,6 +76,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       body: Column(
         children: [
           Padding(
+            padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
+            child: Text(
+              'Diagnóstico: ${provider.totalCount} título(s) salvo(s) no total · '
+              '${provider.items.length} nesta aba'
+              '${provider.loading ? ' · carregando...' : ''}',
+              style: const TextStyle(fontSize: 11, color: Colors.grey),
+            ),
+          ),
+          Padding(
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
             child: TextField(
               controller: _searchController,

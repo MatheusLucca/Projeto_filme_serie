@@ -12,12 +12,19 @@ class TitlesProvider extends ChangeNotifier {
   String _nameQuery = '';
   bool _loading = false;
   String? _lastError;
+  int _totalCount = 0;
 
   List<TitleItem> get items => _items;
   bool? get watchedFilter => _watchedFilter;
   TitleType? get typeFilter => _typeFilter;
   String get nameQuery => _nameQuery;
   bool get loading => _loading;
+
+  /// Total rows in the database regardless of any active filter — for
+  /// diagnosing whether an "invisible after add" issue is a filter/render
+  /// problem (total goes up but visible count doesn't) or a save problem
+  /// (total never goes up).
+  int get totalCount => _totalCount;
 
   /// Set whenever load()/addItem()/updateItem()/deleteItem() fails, so the
   /// UI can surface it instead of failing silently. Cleared on next success.
@@ -36,6 +43,7 @@ class TitlesProvider extends ChangeNotifier {
         type: _typeFilter,
         nameQuery: _nameQuery,
       );
+      _totalCount = await _dbHelper.countAll();
       _lastError = null;
     } catch (e) {
       _lastError = 'Erro ao carregar a lista: $e';

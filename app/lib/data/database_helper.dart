@@ -64,6 +64,13 @@ class DatabaseHelper {
     );
   }
 
+  /// Total row count regardless of any filter — used for diagnostics.
+  Future<int> countAll() async {
+    final db = await database;
+    final result = await db.rawQuery('SELECT COUNT(*) AS c FROM titles');
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
+
   Future<int> delete(int id) async {
     final db = await database;
     return db.delete('titles', where: 'id = ?', whereArgs: [id]);
