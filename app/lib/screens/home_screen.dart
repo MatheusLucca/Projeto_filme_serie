@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 
 import '../models/title_item.dart';
 import '../providers/titles_provider.dart';
-import '../widgets/title_card.dart';
 import 'add_title_screen.dart';
 import 'edit_title_screen.dart';
 import 'settings_screen.dart';
@@ -147,26 +146,32 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           itemCount: provider.items.length,
                           itemBuilder: (context, index) {
                             final item = provider.items[index];
-                            return TitleCard(
-                              item: item,
-                              onTap: () async {
-                                await Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => EditTitleScreen(existing: item),
-                                  ),
-                                );
-                                if (context.mounted) {
-                                  await context.read<TitlesProvider>().load();
-                                }
-                              },
-                              onAdvanceEpisode: () => provider.advanceEpisode(item),
-                              onMarkWatched: item.type == TitleType.filme
-                                  ? () => provider.markWatched(item)
-                                  : null,
-                              onUndoWatched:
-                                  item.status == WatchStatus.visto
-                                      ? () => provider.moveBackToWatchlist(item)
-                                      : null,
+                            // TEMPORARY: plain ListTile instead of TitleCard,
+                            // to isolate whether TitleCard/Dismissible is the
+                            // cause of items not rendering.
+                            return Container(
+                              color: Colors.pinkAccent,
+                              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              child: ListTile(
+                                title: Text(
+                                  item.name,
+                                  style: const TextStyle(color: Colors.black),
+                                ),
+                                subtitle: Text(
+                                  '${item.type.label} · id=${item.id} · status=${item.status.name}',
+                                  style: const TextStyle(color: Colors.black87),
+                                ),
+                                onTap: () async {
+                                  await Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => EditTitleScreen(existing: item),
+                                    ),
+                                  );
+                                  if (context.mounted) {
+                                    await context.read<TitlesProvider>().load();
+                                  }
+                                },
+                              ),
                             );
                           },
                         ),
