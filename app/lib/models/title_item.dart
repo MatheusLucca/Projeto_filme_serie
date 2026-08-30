@@ -42,6 +42,7 @@ class TitleItem {
   final int? rating;
   final String? notes;
   final String? overview;
+  final int? tmdbId;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -57,6 +58,7 @@ class TitleItem {
     this.rating,
     this.notes,
     this.overview,
+    this.tmdbId,
     DateTime? createdAt,
     DateTime? updatedAt,
   })  : createdAt = createdAt ?? DateTime.now(),
@@ -74,6 +76,7 @@ class TitleItem {
     int? rating,
     String? notes,
     String? overview,
+    int? tmdbId,
     DateTime? updatedAt,
   }) {
     return TitleItem(
@@ -88,6 +91,7 @@ class TitleItem {
       rating: rating ?? this.rating,
       notes: notes ?? this.notes,
       overview: overview ?? this.overview,
+      tmdbId: tmdbId ?? this.tmdbId,
       createdAt: createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
     );
@@ -106,6 +110,7 @@ class TitleItem {
       'rating': rating,
       'notes': notes,
       'overview': overview,
+      'tmdb_id': tmdbId,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -124,6 +129,7 @@ class TitleItem {
       rating: map['rating'] as int?,
       notes: map['notes'] as String?,
       overview: map['overview'] as String?,
+      tmdbId: map['tmdb_id'] as int?,
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
     );

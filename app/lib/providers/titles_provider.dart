@@ -68,6 +68,8 @@ class TitlesProvider extends ChangeNotifier {
     await load();
   }
 
+  Future<bool> existsByTmdbId(int tmdbId) => _dbHelper.existsByTmdbId(tmdbId);
+
   Future<void> addItem(TitleItem item) async {
     try {
       await _dbHelper.insert(item);

@@ -39,6 +39,18 @@ class _SelectSeasonScreenState extends State<SelectSeasonScreen> {
   Future<void> _confirm() async {
     setState(() => _saving = true);
     try {
+      final provider = context.read<TitlesProvider>();
+      if (await provider.existsByTmdbId(widget.result.id)) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('"${widget.result.title}" já está na sua lista.')),
+        );
+        Navigator.of(context)
+          ..pop()
+          ..pop();
+        return;
+      }
+
       String? posterPath;
       if (widget.result.posterPath != null) {
         posterPath = await _service.downloadPoster(widget.result.posterPath!);
@@ -53,10 +65,11 @@ class _SelectSeasonScreenState extends State<SelectSeasonScreen> {
         episode: 1,
         totalEpisodes: _selected?.episodeCount,
         overview: widget.result.overview,
+        tmdbId: widget.result.id,
       );
 
       if (!mounted) return;
-      await context.read<TitlesProvider>().addItem(item);
+      await provider.addItem(item);
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

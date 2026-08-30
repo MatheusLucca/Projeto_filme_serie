@@ -19,7 +19,7 @@ class DatabaseHelper {
     final path = join(dbPath, 'watchlist.db');
     return openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE titles (
@@ -34,6 +34,7 @@ class DatabaseHelper {
             rating INTEGER,
             notes TEXT,
             overview TEXT,
+            tmdb_id INTEGER,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
           )
@@ -42,6 +43,9 @@ class DatabaseHelper {
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
           await db.execute('ALTER TABLE titles ADD COLUMN overview TEXT');
+        }
+        if (oldVersion < 3) {
+          await db.execute('ALTER TABLE titles ADD COLUMN tmdb_id INTEGER');
         }
       },
     );
@@ -69,6 +73,18 @@ class DatabaseHelper {
     final db = await database;
     final result = await db.rawQuery('SELECT COUNT(*) AS c FROM titles');
     return Sqflite.firstIntValue(result) ?? 0;
+  }
+
+  /// Returns true if a title with this TMDB id is already saved.
+  Future<bool> existsByTmdbId(int tmdbId) async {
+    final db = await database;
+    final result = await db.query(
+      'titles',
+      where: 'tmdb_id = ?',
+      whereArgs: [tmdbId],
+      limit: 1,
+    );
+    return result.isNotEmpty;
   }
 
   Future<int> delete(int id) async {

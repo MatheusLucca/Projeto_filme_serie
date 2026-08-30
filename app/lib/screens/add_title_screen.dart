@@ -71,6 +71,15 @@ class _AddTitleScreenState extends State<AddTitleScreen> {
   Future<void> _quickAdd(TmdbResult result) async {
     setState(() => _addingId = result.id);
     try {
+      final provider = context.read<TitlesProvider>();
+      if (await provider.existsByTmdbId(result.id)) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('"${result.title}" já está na sua lista.')),
+        );
+        return;
+      }
+
       String? posterPath;
       if (result.posterPath != null) {
         posterPath = await _service.downloadPoster(result.posterPath!);
@@ -92,10 +101,11 @@ class _AddTitleScreenState extends State<AddTitleScreen> {
         posterPath: posterPath,
         totalEpisodes: totalEpisodes,
         overview: result.overview,
+        tmdbId: result.id,
       );
 
       if (!mounted) return;
-      await context.read<TitlesProvider>().addItem(item);
+      await provider.addItem(item);
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

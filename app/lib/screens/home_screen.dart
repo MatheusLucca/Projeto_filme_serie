@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
 import '../models/title_item.dart';
 import '../providers/titles_provider.dart';
+import '../widgets/title_card.dart';
 import 'add_title_screen.dart';
 import 'edit_title_screen.dart';
 import 'settings_screen.dart';
@@ -18,7 +18,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   final _searchController = TextEditingController();
   late final TabController _tabController;
-  String _buildInfo = '';
 
   @override
   void initState() {
@@ -30,10 +29,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<TitlesProvider>().load();
-    });
-    PackageInfo.fromPlatform().then((info) {
-      if (!mounted) return;
-      setState(() => _buildInfo = 'v${info.version}+${info.buildNumber}');
     });
   }
 
@@ -80,15 +75,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
-            child: Text(
-              'Build $_buildInfo · Diagnóstico: ${provider.totalCount} título(s) salvo(s) no total · '
-              '${provider.items.length} nesta aba'
-              '${provider.loading ? ' · carregando...' : ''}',
-              style: const TextStyle(fontSize: 11, color: Colors.grey),
-            ),
-          ),
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
             child: TextField(
@@ -152,32 +138,26 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           itemCount: provider.items.length,
                           itemBuilder: (context, index) {
                             final item = provider.items[index];
-                            // TEMPORARY: plain ListTile instead of TitleCard,
-                            // to isolate whether TitleCard/Dismissible is the
-                            // cause of items not rendering.
-                            return Container(
-                              color: Colors.pinkAccent,
-                              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              child: ListTile(
-                                title: Text(
-                                  item.name,
-                                  style: const TextStyle(color: Colors.black),
-                                ),
-                                subtitle: Text(
-                                  '${item.type.label} · id=${item.id} · status=${item.status.name}',
-                                  style: const TextStyle(color: Colors.black87),
-                                ),
-                                onTap: () async {
-                                  await Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (_) => EditTitleScreen(existing: item),
-                                    ),
-                                  );
-                                  if (context.mounted) {
-                                    await context.read<TitlesProvider>().load();
-                                  }
-                                },
-                              ),
+                            return TitleCard(
+                              item: item,
+                              onTap: () async {
+                                await Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => EditTitleScreen(existing: item),
+                                  ),
+                                );
+                                if (context.mounted) {
+                                  await context.read<TitlesProvider>().load();
+                                }
+                              },
+                              onAdvanceEpisode: () => provider.advanceEpisode(item),
+                              onMarkWatched: item.type == TitleType.filme
+                                  ? () => provider.markWatched(item)
+                                  : null,
+                              onUndoWatched:
+                                  item.status == WatchStatus.visto
+                                      ? () => provider.moveBackToWatchlist(item)
+                                      : null,
                             );
                           },
                         ),

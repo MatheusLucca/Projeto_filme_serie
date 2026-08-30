@@ -117,6 +117,16 @@ class TitleCard extends StatelessWidget {
                   const Icon(Icons.swipe, size: 14, color: Colors.grey),
                 ],
               ),
+              if (item.totalEpisodes != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  'Faltam ${item.totalEpisodes! - item.episode + 1} episódio(s)',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: Colors.grey),
+                ),
+              ],
             ] else if (onMarkWatched != null) ...[
               const SizedBox(height: 8),
               SizedBox(
