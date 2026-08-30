@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../services/settings_service.dart';
 
@@ -14,6 +15,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _controller = TextEditingController();
   bool _loaded = false;
   bool _usingEnvDefault = false;
+  String _versionInfo = '';
 
   @override
   void initState() {
@@ -23,6 +25,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _controller.text = savedKey ?? '';
       _usingEnvDefault = savedKey == null && effectiveKey != null;
       setState(() => _loaded = true);
+    });
+    PackageInfo.fromPlatform().then((info) {
+      if (!mounted) return;
+      setState(() => _versionInfo = 'v${info.version}+${info.buildNumber}');
     });
   }
 
@@ -81,6 +87,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 const SizedBox(height: 16),
                 FilledButton(onPressed: _save, child: const Text('Salvar')),
+                const SizedBox(height: 32),
+                if (_versionInfo.isNotEmpty)
+                  Text(
+                    'Versão do app: $_versionInfo',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
               ],
             ),
     );
