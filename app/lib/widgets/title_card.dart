@@ -106,16 +106,10 @@ class TitleCard extends StatelessWidget {
               ),
             ] else if (_isEpisodic) ...[
               const SizedBox(height: 8),
-              Row(
-                children: [
-                  Text(
-                    'T${item.season} · Ep ${item.episode}'
-                    '${item.totalEpisodes != null ? '/${item.totalEpisodes}' : ''}',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  const Spacer(),
-                  const Icon(Icons.swipe, size: 14, color: Colors.grey),
-                ],
+              Text(
+                'T${item.season} · Ep ${item.episode}'
+                '${item.totalEpisodes != null ? '/${item.totalEpisodes}' : ''}',
+                style: Theme.of(context).textTheme.bodySmall,
               ),
               if (item.totalEpisodes != null) ...[
                 const SizedBox(height: 2),
@@ -125,6 +119,21 @@ class TitleCard extends StatelessWidget {
                       .textTheme
                       .bodySmall
                       ?.copyWith(color: Colors.grey),
+                ),
+              ],
+              if (onAdvanceEpisode != null) ...[
+                const SizedBox(height: 6),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.tonalIcon(
+                    onPressed: onAdvanceEpisode,
+                    style: FilledButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                    ),
+                    icon: const Icon(Icons.check, size: 16),
+                    label: const Text('Marquei o episódio'),
+                  ),
                 ),
               ],
             ] else if (onMarkWatched != null) ...[
@@ -149,7 +158,7 @@ class TitleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final card = Card(
+    return Card(
       clipBehavior: Clip.antiAlias,
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       child: InkWell(
@@ -159,35 +168,6 @@ class TitleCard extends StatelessWidget {
           children: [_poster(context), _info(context)],
         ),
       ),
-    );
-
-    final canAdvance = _isEpisodic && item.status != WatchStatus.visto && onAdvanceEpisode != null;
-    if (!canAdvance) return card;
-
-    return Dismissible(
-      key: ValueKey('title-${item.id}'),
-      direction: DismissDirection.startToEnd,
-      background: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: Colors.green,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        alignment: Alignment.centerLeft,
-        padding: const EdgeInsets.only(left: 20),
-        child: const Row(
-          children: [
-            Icon(Icons.check, color: Colors.white),
-            SizedBox(width: 8),
-            Text('Episódio assistido', style: TextStyle(color: Colors.white)),
-          ],
-        ),
-      ),
-      confirmDismiss: (_) async {
-        onAdvanceEpisode?.call();
-        return false;
-      },
-      child: card,
     );
   }
 }
