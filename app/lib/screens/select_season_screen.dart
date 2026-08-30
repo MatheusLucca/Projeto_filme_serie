@@ -56,6 +56,13 @@ class _SelectSeasonScreenState extends State<SelectSeasonScreen> {
         posterPath = await _service.downloadPoster(widget.result.posterPath!);
       }
 
+      final totalSeriesEpisodes = _seasons.fold<int>(0, (sum, s) => sum + s.episodeCount);
+      final episodesWatched = _selected == null
+          ? 0
+          : _seasons
+              .where((s) => s.seasonNumber < _selected!.seasonNumber)
+              .fold<int>(0, (sum, s) => sum + s.episodeCount);
+
       final item = TitleItem(
         name: widget.result.title,
         type: widget.result.type,
@@ -64,6 +71,8 @@ class _SelectSeasonScreenState extends State<SelectSeasonScreen> {
         season: _selected?.seasonNumber ?? 1,
         episode: 1,
         totalEpisodes: _selected?.episodeCount,
+        totalSeriesEpisodes: totalSeriesEpisodes > 0 ? totalSeriesEpisodes : null,
+        episodesWatched: episodesWatched,
         overview: widget.result.overview,
         tmdbId: widget.result.id,
       );

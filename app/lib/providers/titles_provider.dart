@@ -107,16 +107,32 @@ class TitlesProvider extends ChangeNotifier {
     var newEpisode = item.episode + 1;
     var newSeason = item.season;
     var newStatus = item.status;
-    if (item.totalEpisodes != null && newEpisode > item.totalEpisodes!) {
+    final newEpisodesWatched = item.episodesWatched + 1;
+
+    final seriesDone = item.totalSeriesEpisodes != null &&
+        newEpisodesWatched >= item.totalSeriesEpisodes!;
+
+    if (seriesDone) {
       newStatus = WatchStatus.visto;
-      newEpisode = item.totalEpisodes!;
+      newEpisode = item.totalEpisodes ?? newEpisode;
+    } else if (item.totalEpisodes != null && newEpisode > item.totalEpisodes!) {
+      // Finished this season's episodes but the series isn't fully done
+      // (or we don't know the series total) — keep watching, reset count
+      // within the season so the T/Ep display doesn't overflow.
+      newEpisode = 1;
+      newSeason = item.season + 1;
+      if (item.totalSeriesEpisodes == null) {
+        newStatus = WatchStatus.visto;
+      }
     } else if (item.status == WatchStatus.queroVer) {
       newStatus = WatchStatus.assistindo;
     }
+
     await updateItem(item.copyWith(
       episode: newEpisode,
       season: newSeason,
       status: newStatus,
+      episodesWatched: newEpisodesWatched,
     ));
   }
 

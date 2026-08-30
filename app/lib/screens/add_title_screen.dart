@@ -86,12 +86,12 @@ class _AddTitleScreenState extends State<AddTitleScreen> {
       }
 
       int? totalEpisodes;
+      int? totalSeriesEpisodes;
       if (result.type == TitleType.serie) {
         final seasons = await _service.fetchSeasons(result);
         final season1 = seasons.where((s) => s.seasonNumber == 1).toList();
-        totalEpisodes = season1.isNotEmpty
-            ? season1.first.episodeCount
-            : await _service.fetchTotalEpisodes(result);
+        totalSeriesEpisodes = await _service.fetchTotalEpisodes(result);
+        totalEpisodes = season1.isNotEmpty ? season1.first.episodeCount : totalSeriesEpisodes;
       }
 
       final item = TitleItem(
@@ -100,6 +100,7 @@ class _AddTitleScreenState extends State<AddTitleScreen> {
         status: WatchStatus.queroVer,
         posterPath: posterPath,
         totalEpisodes: totalEpisodes,
+        totalSeriesEpisodes: totalSeriesEpisodes,
         overview: result.overview,
         tmdbId: result.id,
       );

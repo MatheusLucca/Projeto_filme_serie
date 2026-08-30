@@ -3,8 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import '../models/title_item.dart';
+import '../services/tmdb_service.dart';
 
-class TitleCard extends StatelessWidget {
+class TitleCard extends StatefulWidget {
   final TitleItem item;
   final VoidCallback onTap;
   final VoidCallback? onAdvanceEpisode;
@@ -20,7 +21,34 @@ class TitleCard extends StatelessWidget {
     this.onUndoWatched,
   });
 
+  @override
+  State<TitleCard> createState() => _TitleCardState();
+}
+
+class _TitleCardState extends State<TitleCard> with SingleTickerProviderStateMixin {
+  static const _swipeThreshold = 90.0;
+
+  late final AnimationController _controller;
+  double _dragExtent = 0;
+
+  TitleItem get item => widget.item;
   bool get _isEpisodic => item.type != TitleType.filme;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+      value: 0,
+    )..addListener(() => setState(() => _dragExtent = _controller.value));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   bool _posterExists(String path) {
     try {
@@ -28,6 +56,22 @@ class TitleCard extends StatelessWidget {
     } catch (_) {
       return false;
     }
+  }
+
+  void _onDragUpdate(DragUpdateDetails details) {
+    if (widget.onAdvanceEpisode == null) return;
+    setState(() {
+      _dragExtent = (_dragExtent + details.delta.dx).clamp(0.0, _swipeThreshold * 1.5);
+    });
+  }
+
+  void _onDragEnd(DragEndDetails details) {
+    if (widget.onAdvanceEpisode == null) return;
+    if (_dragExtent >= _swipeThreshold) {
+      widget.onAdvanceEpisode!.call();
+    }
+    _controller.value = _dragExtent;
+    _controller.animateTo(0, curve: Curves.easeOut);
   }
 
   Widget _poster(BuildContext context) {
@@ -48,6 +92,50 @@ class TitleCard extends StatelessWidget {
               color: Theme.of(context).colorScheme.surfaceContainerHighest,
               child: const Icon(Icons.movie_outlined, size: 36),
             ),
+    );
+  }
+
+  Widget _episodeInfo(BuildContext context) {
+    final remainingInSeries = item.totalSeriesEpisodes != null
+        ? item.totalSeriesEpisodes! - item.episodesWatched
+        : (item.totalEpisodes != null ? item.totalEpisodes! - item.episode + 1 : null);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'T${item.season} · Ep ${item.episode}'
+          '${item.totalEpisodes != null ? '/${item.totalEpisodes}' : ''}',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        if (item.tmdbId != null)
+          FutureBuilder<String?>(
+            future: TmdbService().fetchEpisodeName(item.tmdbId!, item.season, item.episode),
+            builder: (context, snapshot) {
+              final name = snapshot.data;
+              if (name == null || name.isEmpty) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(
+                  name,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(fontStyle: FontStyle.italic),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              );
+            },
+          ),
+        if (remainingInSeries != null) ...[
+          const SizedBox(height: 2),
+          Text(
+            'Faltam $remainingInSeries episódio(s) pra acabar a série',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
+          ),
+        ],
+      ],
     );
   }
 
@@ -91,10 +179,10 @@ class TitleCard extends StatelessWidget {
                   const Icon(Icons.check_circle, size: 16, color: Colors.green),
                   const SizedBox(width: 4),
                   const Text('Visto', style: TextStyle(color: Colors.green)),
-                  if (onUndoWatched != null) ...[
+                  if (widget.onUndoWatched != null) ...[
                     const Spacer(),
                     TextButton(
-                      onPressed: onUndoWatched,
+                      onPressed: widget.onUndoWatched,
                       style: TextButton.styleFrom(
                         visualDensity: VisualDensity.compact,
                         padding: const EdgeInsets.symmetric(horizontal: 6),
@@ -106,42 +194,34 @@ class TitleCard extends StatelessWidget {
               ),
             ] else if (_isEpisodic) ...[
               const SizedBox(height: 8),
-              Text(
-                'T${item.season} · Ep ${item.episode}'
-                '${item.totalEpisodes != null ? '/${item.totalEpisodes}' : ''}',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              if (item.totalEpisodes != null) ...[
-                const SizedBox(height: 2),
-                Text(
-                  'Faltam ${item.totalEpisodes! - item.episode + 1} episódio(s)',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: Colors.grey),
-                ),
-              ],
-              if (onAdvanceEpisode != null) ...[
+              _episodeInfo(context),
+              if (widget.onAdvanceEpisode != null) ...[
                 const SizedBox(height: 6),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.tonalIcon(
-                    onPressed: onAdvanceEpisode,
-                    style: FilledButton.styleFrom(
-                      visualDensity: VisualDensity.compact,
-                      padding: const EdgeInsets.symmetric(vertical: 4),
+                Row(
+                  children: [
+                    const Icon(Icons.swipe, size: 14, color: Colors.grey),
+                    const SizedBox(width: 4),
+                    const Expanded(
+                      child: Text(
+                        'Arraste para o lado para marcar',
+                        style: TextStyle(fontSize: 11, color: Colors.grey),
+                      ),
                     ),
-                    icon: const Icon(Icons.check, size: 16),
-                    label: const Text('Marquei o episódio'),
-                  ),
+                    IconButton(
+                      icon: const Icon(Icons.check_circle_outline),
+                      tooltip: 'Marquei o episódio',
+                      visualDensity: VisualDensity.compact,
+                      onPressed: widget.onAdvanceEpisode,
+                    ),
+                  ],
                 ),
               ],
-            ] else if (onMarkWatched != null) ...[
+            ] else if (widget.onMarkWatched != null) ...[
               const SizedBox(height: 8),
               SizedBox(
                 width: double.infinity,
                 child: FilledButton.tonal(
-                  onPressed: onMarkWatched,
+                  onPressed: widget.onMarkWatched,
                   style: FilledButton.styleFrom(
                     visualDensity: VisualDensity.compact,
                     padding: const EdgeInsets.symmetric(vertical: 4),
@@ -158,11 +238,13 @@ class TitleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    final canSwipe = _isEpisodic && item.status != WatchStatus.visto && widget.onAdvanceEpisode != null;
+
+    final card = Card(
       clipBehavior: Clip.antiAlias,
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       child: InkWell(
-        onTap: onTap,
+        onTap: widget.onTap,
         child: IntrinsicHeight(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -170,6 +252,42 @@ class TitleCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+
+    if (!canSwipe) return card;
+
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.green,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.only(left: 20),
+            child: Opacity(
+              opacity: (_dragExtent / _swipeThreshold).clamp(0.0, 1.0),
+              child: const Row(
+                children: [
+                  Icon(Icons.check, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text('Episódio assistido', style: TextStyle(color: Colors.white)),
+                ],
+              ),
+            ),
+          ),
+        ),
+        Transform.translate(
+          offset: Offset(_dragExtent, 0),
+          child: GestureDetector(
+            onHorizontalDragUpdate: _onDragUpdate,
+            onHorizontalDragEnd: _onDragEnd,
+            child: card,
+          ),
+        ),
+      ],
     );
   }
 }

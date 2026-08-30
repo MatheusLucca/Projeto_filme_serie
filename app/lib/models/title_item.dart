@@ -43,6 +43,8 @@ class TitleItem {
   final String? notes;
   final String? overview;
   final int? tmdbId;
+  final int? totalSeriesEpisodes;
+  final int episodesWatched;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -59,6 +61,8 @@ class TitleItem {
     this.notes,
     this.overview,
     this.tmdbId,
+    this.totalSeriesEpisodes,
+    this.episodesWatched = 0,
     DateTime? createdAt,
     DateTime? updatedAt,
   })  : createdAt = createdAt ?? DateTime.now(),
@@ -77,6 +81,8 @@ class TitleItem {
     String? notes,
     String? overview,
     int? tmdbId,
+    int? totalSeriesEpisodes,
+    int? episodesWatched,
     DateTime? updatedAt,
   }) {
     return TitleItem(
@@ -92,6 +98,8 @@ class TitleItem {
       notes: notes ?? this.notes,
       overview: overview ?? this.overview,
       tmdbId: tmdbId ?? this.tmdbId,
+      totalSeriesEpisodes: totalSeriesEpisodes ?? this.totalSeriesEpisodes,
+      episodesWatched: episodesWatched ?? this.episodesWatched,
       createdAt: createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
     );
@@ -111,6 +119,8 @@ class TitleItem {
       'notes': notes,
       'overview': overview,
       'tmdb_id': tmdbId,
+      'total_series_episodes': totalSeriesEpisodes,
+      'episodes_watched': episodesWatched,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -130,6 +140,8 @@ class TitleItem {
       notes: map['notes'] as String?,
       overview: map['overview'] as String?,
       tmdbId: map['tmdb_id'] as int?,
+      totalSeriesEpisodes: map['total_series_episodes'] as int?,
+      episodesWatched: map['episodes_watched'] as int? ?? 0,
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
     );

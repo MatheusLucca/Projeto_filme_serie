@@ -19,7 +19,7 @@ class DatabaseHelper {
     final path = join(dbPath, 'watchlist.db');
     return openDatabase(
       path,
-      version: 3,
+      version: 4,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE titles (
@@ -35,6 +35,8 @@ class DatabaseHelper {
             notes TEXT,
             overview TEXT,
             tmdb_id INTEGER,
+            total_series_episodes INTEGER,
+            episodes_watched INTEGER NOT NULL DEFAULT 0,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
           )
@@ -46,6 +48,12 @@ class DatabaseHelper {
         }
         if (oldVersion < 3) {
           await db.execute('ALTER TABLE titles ADD COLUMN tmdb_id INTEGER');
+        }
+        if (oldVersion < 4) {
+          await db.execute('ALTER TABLE titles ADD COLUMN total_series_episodes INTEGER');
+          await db.execute(
+            'ALTER TABLE titles ADD COLUMN episodes_watched INTEGER NOT NULL DEFAULT 0',
+          );
         }
       },
     );

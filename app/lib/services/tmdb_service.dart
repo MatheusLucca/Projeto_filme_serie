@@ -51,6 +51,8 @@ class TmdbService {
   static const _baseUrl = 'https://api.themoviedb.org/3';
   static const _imageBaseUrl = 'https://image.tmdb.org/t/p/w342';
 
+  static final Map<String, String?> _episodeNameCache = {};
+
   final SettingsService _settings = SettingsService();
 
   Future<List<TmdbResult>> search(String query) async {
@@ -144,6 +146,34 @@ class TmdbService {
           .toList();
     } catch (_) {
       return [];
+    }
+  }
+
+  /// Fetches the episode name/title for a given TV show, season and episode
+  /// number. Returns null on failure or when there's no TMDB id.
+  Future<String?> fetchEpisodeName(int tmdbId, int season, int episode) async {
+    final cacheKey = '$tmdbId-$season-$episode';
+    if (_episodeNameCache.containsKey(cacheKey)) {
+      return _episodeNameCache[cacheKey];
+    }
+
+    final apiKey = await _settings.getTmdbApiKey();
+    if (apiKey == null || apiKey.isEmpty) return null;
+
+    try {
+      final uri = Uri.parse('$_baseUrl/tv/$tmdbId/season/$season/episode/$episode')
+          .replace(queryParameters: {
+        'api_key': apiKey,
+        'language': 'pt-BR',
+      });
+      final response = await http.get(uri);
+      if (response.statusCode != 200) return null;
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final name = data['name'] as String?;
+      _episodeNameCache[cacheKey] = name;
+      return name;
+    } catch (_) {
+      return null;
     }
   }
 
