@@ -57,7 +57,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Watchlist'),
+        title: const Text('Minha Watchlist'),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_outlined),

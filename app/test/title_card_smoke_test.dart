@@ -31,7 +31,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Ben 10'), findsOneWidget);
-    expect(find.textContaining('Faltam'), findsOneWidget);
+    expect(find.text('S01 · E06/13'), findsOneWidget);
   });
 
   testWidgets('TitleCard (movie) renders inside ListView.builder', (tester) async {
