@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../models/title_item.dart';
 import '../providers/titles_provider.dart';
+import '../theme/app_theme.dart';
 import '../widgets/title_card.dart';
 import 'add_title_screen.dart';
 import 'edit_title_screen.dart';
@@ -56,10 +57,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Minha Watchlist'),
+        title: const Text('Watchlist'),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_outlined),
+            tooltip: 'Configurações',
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const SettingsScreen()),
             ),
@@ -68,26 +70,25 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
-            Tab(text: 'Não assistidos'),
-            Tab(text: 'Assistidos'),
+            Tab(text: 'A ASSISTIR'),
+            Tab(text: 'VISTOS'),
           ],
         ),
       ),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Buscar na sua lista...',
-                prefixIcon: const Icon(Icons.search),
-                border: const OutlineInputBorder(),
+                hintText: 'Buscar na sua lista',
+                prefixIcon: const Icon(Icons.search, size: 20),
                 isDense: true,
                 suffixIcon: _searchController.text.isEmpty
                     ? null
                     : IconButton(
-                        icon: const Icon(Icons.clear),
+                        icon: const Icon(Icons.clear, size: 18),
                         onPressed: () {
                           _searchController.clear();
                           provider.setNameQuery('');
@@ -101,40 +102,40 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               },
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: SizedBox(
-              width: double.infinity,
-              child: DropdownButtonFormField<TitleType?>(
-                initialValue: provider.typeFilter,
-                decoration: const InputDecoration(
-                  labelText: 'Tipo',
-                  border: OutlineInputBorder(),
-                  isDense: true,
+          SizedBox(
+            height: 34,
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              scrollDirection: Axis.horizontal,
+              children: [
+                _TypeFilterChip(
+                  label: 'Todos',
+                  color: Theme.of(context).colorScheme.onSurface,
+                  selected: provider.typeFilter == null,
+                  onTap: () => provider.setTypeFilter(null),
                 ),
-                items: [
-                  const DropdownMenuItem(value: null, child: Text('Todos os tipos')),
-                  ...TitleType.values
-                      .map((t) => DropdownMenuItem(value: t, child: Text(t.label))),
+                for (final t in TitleType.values) ...[
+                  const SizedBox(width: 8),
+                  _TypeFilterChip(
+                    label: t.label,
+                    color: t.channelColor,
+                    selected: provider.typeFilter == t,
+                    onTap: () => provider.setTypeFilter(t),
+                  ),
                 ],
-                onChanged: (v) => provider.setTypeFilter(v),
-              ),
+              ],
             ),
           ),
+          const SizedBox(height: 8),
           Expanded(
             child: provider.loading
                 ? const Center(child: CircularProgressIndicator())
                 : provider.items.isEmpty
-                    ? Center(
-                        child: Text(
-                          provider.watchedFilter == true
-                              ? 'Nada assistido ainda.'
-                              : 'Nada por aqui. Toque em + para adicionar.',
-                        ),
-                      )
+                    ? _EmptyState(watched: provider.watchedFilter == true)
                     : RefreshIndicator(
                         onRefresh: () => context.read<TitlesProvider>().load(),
                         child: ListView.builder(
+                          padding: const EdgeInsets.only(bottom: 88),
                           itemCount: provider.items.length,
                           itemBuilder: (context, index) {
                             final item = provider.items[index];
@@ -175,6 +176,86 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           }
         },
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+}
+
+class _TypeFilterChip extends StatelessWidget {
+  final String label;
+  final Color color;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _TypeFilterChip({
+    required this.label,
+    required this.color,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected ? color.withValues(alpha: 0.16) : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: selected ? color : scheme.outline),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          label.toUpperCase(),
+          style: AppFonts.mono(
+            size: 11,
+            weight: FontWeight.w700,
+            color: selected ? color : scheme.onSurface.withValues(alpha: 0.6),
+            letterSpacing: 0.4,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  final bool watched;
+  const _EmptyState({required this.watched});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              watched ? Icons.check_circle_outline : Icons.local_movies_outlined,
+              size: 40,
+              color: scheme.outline,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              watched ? 'Nada assistido ainda' : 'Sua lista está vazia',
+              style: Theme.of(context).textTheme.titleMedium,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              watched
+                  ? 'O que você já assistir aparece aqui.'
+                  : 'Toque em + para adicionar um filme, série ou anime.',
+              style: Theme.of(context).textTheme.bodySmall,
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }

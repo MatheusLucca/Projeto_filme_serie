@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../services/settings_service.dart';
+import '../theme/app_theme.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -57,23 +58,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                const Text(
-                  'Chave da API do TMDB',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                const Text(
+                Text('CHAVE DA API DO TMDB', style: AppFonts.mono(size: 12, weight: FontWeight.w700)),
+                const SizedBox(height: 6),
+                Text(
                   'Usada para buscar pôster e sinopse automaticamente ao adicionar um '
                   'título. Crie uma conta gratuita em themoviedb.org, gere uma API Key '
                   '(v3 auth) em Configurações > API e cole abaixo.',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
                 if (_usingEnvDefault) ...[
                   const SizedBox(height: 12),
-                  const Text(
+                  Text(
                     'Usando a chave padrão definida no arquivo .env do projeto. '
                     'Preencha abaixo para sobrescrevê-la.',
-                    style: TextStyle(fontSize: 12, color: Colors.green),
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: AppColors.success),
                   ),
                 ],
                 const SizedBox(height: 12),
@@ -89,10 +90,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 FilledButton(onPressed: _save, child: const Text('Salvar')),
                 const SizedBox(height: 32),
                 if (_versionInfo.isNotEmpty)
-                  Text(
-                    'Versão do app: $_versionInfo',
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
+                  Text(_versionInfo, style: AppFonts.mono(size: 11)),
               ],
             ),
     );

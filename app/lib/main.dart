@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import 'providers/titles_provider.dart';
 import 'screens/home_screen.dart';
+import 'theme/app_theme.dart';
 import 'widgets/error_banner.dart';
 
 void main() async {
@@ -56,17 +57,8 @@ class WatchlistApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Minha Watchlist',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-          useMaterial3: true,
-        ),
-        darkTheme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.deepPurple,
-            brightness: Brightness.dark,
-          ),
-          useMaterial3: true,
-        ),
+        theme: AppTheme.light,
+        darkTheme: AppTheme.dark,
         home: const HomeScreen(),
         builder: (context, child) => ErrorBannerOverlay(child: child ?? const SizedBox.shrink()),
       ),

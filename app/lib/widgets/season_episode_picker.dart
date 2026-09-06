@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/title_item.dart';
 import '../services/tmdb_service.dart';
+import '../theme/app_theme.dart';
 
 /// Result of confirming a jump to a specific episode.
 class EpisodeJumpResult {
@@ -230,7 +231,7 @@ class _SeasonEpisodePickerState extends State<SeasonEpisodePicker> {
                                       ?.copyWith(fontWeight: FontWeight.bold)),
                               const SizedBox(width: 4),
                               if (watched)
-                                const Icon(Icons.check_circle, size: 14, color: Colors.green),
+                                const Icon(Icons.check_circle, size: 14, color: AppColors.success),
                               if (isCurrent) const Icon(Icons.play_circle_fill, size: 14),
                             ],
                           ),

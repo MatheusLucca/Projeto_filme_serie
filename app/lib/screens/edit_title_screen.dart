@@ -330,7 +330,10 @@ class _EditTitleScreenState extends State<EditTitleScreen> {
                 },
                 icon: const Icon(Icons.delete_outline),
                 label: const Text('Excluir'),
-                style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Theme.of(context).colorScheme.error,
+                  side: BorderSide(color: Theme.of(context).colorScheme.error),
+                ),
               ),
           ],
         ),

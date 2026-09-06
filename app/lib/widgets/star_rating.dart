@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 class StarRating extends StatelessWidget {
   final int? rating;
   final ValueChanged<int?> onChanged;
@@ -24,8 +26,8 @@ class StarRating extends StatelessWidget {
             visualDensity: VisualDensity.compact,
             onPressed: () => onChanged(rating == i ? null : i),
             icon: Icon(
-              (rating ?? 0) >= i ? Icons.star : Icons.star_border,
-              color: Colors.amber,
+              (rating ?? 0) >= i ? Icons.star_rounded : Icons.star_outline_rounded,
+              color: AppColors.brass,
             ),
           ),
       ],
