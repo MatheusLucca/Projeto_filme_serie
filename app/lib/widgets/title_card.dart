@@ -147,6 +147,11 @@ class _TitleCardState extends State<TitleCard> with SingleTickerProviderStateMix
         : (item.totalEpisodes != null && item.totalEpisodes! > 0
             ? (item.episode - 1) / item.totalEpisodes!
             : 0.0);
+    final remaining = totalInSeries != null && totalInSeries > 0
+        ? totalInSeries - item.episodesWatched
+        : (item.totalEpisodes != null && item.totalEpisodes! > 0
+            ? item.totalEpisodes! - (item.episode - 1)
+            : null);
     final counter = 'S${item.season.toString().padLeft(2, '0')} · '
         'E${item.episode.toString().padLeft(2, '0')}'
         '${item.totalEpisodes != null ? '/${item.totalEpisodes}' : ''}';
@@ -174,6 +179,14 @@ class _TitleCardState extends State<TitleCard> with SingleTickerProviderStateMix
           ),
         const SizedBox(height: 6),
         _progressBar(context, fraction),
+        if (remaining != null && remaining > 0)
+          Padding(
+            padding: const EdgeInsets.only(top: 3),
+            child: Text(
+              remaining == 1 ? 'falta 1 episódio' : 'faltam $remaining episódios',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
         if (widget.onAdvanceEpisode != null) ...[
           const SizedBox(height: 6),
           Row(

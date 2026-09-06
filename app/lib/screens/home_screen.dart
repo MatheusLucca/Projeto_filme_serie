@@ -123,6 +123,19 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     onTap: () => provider.setTypeFilter(t),
                   ),
                 ],
+                if (provider.watchedFilter == false) ...[
+                  const SizedBox(width: 8),
+                  _TypeFilterChip(
+                    label: 'Em andamento',
+                    color: Theme.of(context).colorScheme.onSurface,
+                    selected: provider.statusFilter == WatchStatus.assistindo,
+                    onTap: () => provider.setStatusFilter(
+                      provider.statusFilter == WatchStatus.assistindo
+                          ? null
+                          : WatchStatus.assistindo,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

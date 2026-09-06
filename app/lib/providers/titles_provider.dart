@@ -9,6 +9,7 @@ class TitlesProvider extends ChangeNotifier {
   List<TitleItem> _items = [];
   bool? _watchedFilter = false;
   TitleType? _typeFilter;
+  WatchStatus? _statusFilter;
   String _nameQuery = '';
   bool _loading = false;
   String? _lastError;
@@ -17,6 +18,7 @@ class TitlesProvider extends ChangeNotifier {
   List<TitleItem> get items => _items;
   bool? get watchedFilter => _watchedFilter;
   TitleType? get typeFilter => _typeFilter;
+  WatchStatus? get statusFilter => _statusFilter;
   String get nameQuery => _nameQuery;
   bool get loading => _loading;
 
@@ -39,7 +41,8 @@ class TitlesProvider extends ChangeNotifier {
     notifyListeners();
     try {
       _items = await _dbHelper.fetchAll(
-        watched: _watchedFilter,
+        status: _statusFilter,
+        watched: _statusFilter == null ? _watchedFilter : null,
         type: _typeFilter,
         nameQuery: _nameQuery,
       );
@@ -55,6 +58,12 @@ class TitlesProvider extends ChangeNotifier {
   /// false = não assistidos (quero ver + assistindo), true = assistidos, null = todos.
   Future<void> setWatchedFilter(bool? watched) async {
     _watchedFilter = watched;
+    _statusFilter = null;
+    await load();
+  }
+
+  Future<void> setStatusFilter(WatchStatus? status) async {
+    _statusFilter = status;
     await load();
   }
 
