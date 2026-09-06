@@ -110,11 +110,9 @@ class _EditTitleScreenState extends State<EditTitleScreen> {
     }
   }
 
-  void _save() {
-    if (!_formKey.currentState!.validate()) return;
-    final provider = context.read<TitlesProvider>();
+  TitleItem _buildItem() {
     final totalEpisodesText = _totalEpisodesController.text.trim();
-    final item = TitleItem(
+    return TitleItem(
       id: widget.existing?.id,
       name: _nameController.text.trim(),
       type: _type,
@@ -131,12 +129,37 @@ class _EditTitleScreenState extends State<EditTitleScreen> {
       episodesWatched: _episodesWatched,
       createdAt: widget.existing?.createdAt,
     );
+  }
+
+  void _save() {
+    if (!_formKey.currentState!.validate()) return;
+    final provider = context.read<TitlesProvider>();
+    final item = _buildItem();
     if (_isEditing) {
       provider.updateItem(item);
     } else {
       provider.addItem(item);
     }
     Navigator.of(context).pop();
+  }
+
+  Future<void> _onEpisodeJump(EpisodeJumpResult result) async {
+    setState(() {
+      _seasonController.text = result.season.toString();
+      _episodeController.text = result.episode.toString();
+      _totalEpisodesController.text = result.totalEpisodesInSeason.toString();
+      _episodesWatched = result.episodesWatched;
+      _status = _episodesWatched == 0 ? WatchStatus.queroVer : WatchStatus.assistindo;
+    });
+
+    if (_isEditing) {
+      await context.read<TitlesProvider>().updateItem(_buildItem());
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Progresso atualizado.')),
+        );
+      }
+    }
   }
 
   @override
@@ -254,15 +277,7 @@ class _EditTitleScreenState extends State<EditTitleScreen> {
                   tmdbId: widget.existing!.tmdbId!,
                   currentSeason: int.tryParse(_seasonController.text) ?? 1,
                   currentEpisode: int.tryParse(_episodeController.text) ?? 1,
-                  onJump: (result) {
-                    setState(() {
-                      _seasonController.text = result.season.toString();
-                      _episodeController.text = result.episode.toString();
-                      _totalEpisodesController.text = result.totalEpisodesInSeason.toString();
-                      _episodesWatched = result.episodesWatched;
-                      _status = _episodesWatched == 0 ? WatchStatus.queroVer : WatchStatus.assistindo;
-                    });
-                  },
+                  onJump: _onEpisodeJump,
                 ),
               ],
             ],
