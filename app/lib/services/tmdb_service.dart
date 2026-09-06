@@ -39,6 +39,20 @@ class TmdbSeason {
   });
 }
 
+class TmdbEpisode {
+  final int episodeNumber;
+  final String name;
+  final String? airDate;
+  final String? stillPath;
+
+  TmdbEpisode({
+    required this.episodeNumber,
+    required this.name,
+    this.airDate,
+    this.stillPath,
+  });
+}
+
 class TmdbException implements Exception {
   final String message;
   TmdbException(this.message);
@@ -143,6 +157,36 @@ class TmdbService {
                 episodeCount: s['episode_count'] as int? ?? 0,
               ))
           .where((s) => s.seasonNumber > 0 && s.episodeCount > 0)
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Fetches all episodes of a given season for a TV show.
+  /// Returns an empty list on failure.
+  Future<List<TmdbEpisode>> fetchSeasonEpisodes(int tmdbId, int seasonNumber) async {
+    final apiKey = await _settings.getTmdbApiKey();
+    if (apiKey == null || apiKey.isEmpty) return [];
+
+    try {
+      final uri = Uri.parse('$_baseUrl/tv/$tmdbId/season/$seasonNumber')
+          .replace(queryParameters: {
+        'api_key': apiKey,
+        'language': 'pt-BR',
+      });
+      final response = await http.get(uri);
+      if (response.statusCode != 200) return [];
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final episodes = (data['episodes'] as List<dynamic>? ?? []);
+      return episodes
+          .map((e) => TmdbEpisode(
+                episodeNumber: e['episode_number'] as int? ?? 0,
+                name: e['name'] as String? ?? 'Episódio',
+                airDate: e['air_date'] as String?,
+                stillPath: e['still_path'] as String?,
+              ))
+          .where((e) => e.episodeNumber > 0)
           .toList();
     } catch (_) {
       return [];

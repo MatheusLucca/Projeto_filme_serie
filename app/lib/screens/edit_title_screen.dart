@@ -10,6 +10,7 @@ import 'package:uuid/uuid.dart';
 import '../models/title_item.dart';
 import '../providers/titles_provider.dart';
 import '../services/tmdb_service.dart';
+import '../widgets/season_episode_picker.dart';
 import '../widgets/star_rating.dart';
 import '../widgets/tmdb_search_sheet.dart';
 
@@ -36,6 +37,7 @@ class _EditTitleScreenState extends State<EditTitleScreen> {
   int? _rating;
   String? _overview;
   bool _fetchingPoster = false;
+  int _episodesWatched = 0;
 
   bool get _isEditing => widget.existing != null;
 
@@ -54,6 +56,7 @@ class _EditTitleScreenState extends State<EditTitleScreen> {
     _posterPath = item?.posterPath;
     _rating = item?.rating;
     _overview = item?.overview;
+    _episodesWatched = item?.episodesWatched ?? 0;
   }
 
   @override
@@ -123,6 +126,9 @@ class _EditTitleScreenState extends State<EditTitleScreen> {
       notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
       rating: _rating,
       overview: _overview,
+      tmdbId: widget.existing?.tmdbId,
+      totalSeriesEpisodes: widget.existing?.totalSeriesEpisodes,
+      episodesWatched: _episodesWatched,
       createdAt: widget.existing?.createdAt,
     );
     if (_isEditing) {
@@ -242,6 +248,23 @@ class _EditTitleScreenState extends State<EditTitleScreen> {
                 ),
                 keyboardType: TextInputType.number,
               ),
+              if (widget.existing?.tmdbId != null) ...[
+                const SizedBox(height: 20),
+                SeasonEpisodePicker(
+                  tmdbId: widget.existing!.tmdbId!,
+                  currentSeason: int.tryParse(_seasonController.text) ?? 1,
+                  currentEpisode: int.tryParse(_episodeController.text) ?? 1,
+                  onJump: (result) {
+                    setState(() {
+                      _seasonController.text = result.season.toString();
+                      _episodeController.text = result.episode.toString();
+                      _totalEpisodesController.text = result.totalEpisodesInSeason.toString();
+                      _episodesWatched = result.episodesWatched;
+                      _status = _episodesWatched == 0 ? WatchStatus.queroVer : WatchStatus.assistindo;
+                    });
+                  },
+                ),
+              ],
             ],
             const SizedBox(height: 16),
             Row(
