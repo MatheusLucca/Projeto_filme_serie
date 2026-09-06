@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#1B1F23"/>
+
+  <!-- clapperboard hinge shadow -->
+  <g>
+    <!-- board body -->
+    <rect x="96" y="216" width="320" height="200" rx="18" fill="#F6F4EF"/>
+
+    <!-- sprocket cutouts, left + right, echo film stock -->
+    <circle cx="132" cy="252" r="10" fill="#1B1F23"/>
+    <circle cx="132" cy="380" r="10" fill="#1B1F23"/>
+    <circle cx="380" cy="252" r="10" fill="#1B1F23"/>
+    <circle cx="380" cy="380" r="10" fill="#1B1F23"/>
+
+    <!-- tape-counter ticks, the identity's signature mark -->
+    <g stroke="#FF7A3D" stroke-width="6" stroke-linecap="round">
+      <line x1="168" y1="360" x2="168" y2="380"/>
+      <line x1="194" y1="360" x2="194" y2="380"/>
+      <line x1="220" y1="360" x2="220" y2="380"/>
+      <line x1="246" y1="360" x2="246" y2="380"/>
+      <line x1="272" y1="360" x2="272" y2="380"/>
+      <line x1="298" y1="360" x2="298" y2="380"/>
+      <line x1="324" y1="360" x2="324" y2="380"/>
+      <line x1="350" y1="360" x2="350" y2="380"/>
+    </g>
+
+    <!-- clapper top bar, hinged open at an angle -->
+    <g transform="rotate(-10 96 216)">
+      <rect x="96" y="146" width="320" height="70" rx="14" fill="#F6F4EF"/>
+      <!-- diagonal slate stripes -->
+      <clipPath id="clap">
+        <rect x="96" y="146" width="320" height="70" rx="14"/>
+      </clipPath>
+      <g clip-path="url(#clap)">
+        <g fill="#FF7A3D">
+          <polygon points="140,146 180,146 140,216 100,216"/>
+          <polygon points="220,146 260,146 220,216 180,216"/>
+          <polygon points="300,146 340,146 300,216 260,216"/>
+          <polygon points="380,146 420,146 380,216 340,216"/>
+        </g>
+      </g>
+    </g>
+
+    <!-- hinge rivet -->
+    <circle cx="96" cy="216" r="14" fill="#CBA35C"/>
+  </g>
+</svg>
